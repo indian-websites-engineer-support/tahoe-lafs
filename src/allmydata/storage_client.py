@@ -32,6 +32,7 @@ the foolscap-based server implemented in src/allmydata/storage/*.py .
 import re, time
 from zope.interface import implements
 from foolscap.api import eventually
+from foolscap.referenceable import decode_furl_endpoints
 from allmydata.interfaces import IStorageBroker, IDisplayableServer, IServer
 from allmydata.util import log, base32
 from allmydata.util.assertutil import precondition
@@ -162,6 +163,24 @@ class StubServer:
     def get_nickname(self):
         return "?"
 
+
+AFTER_ENDPOINT_TYPE_RE=re.compile(r"^.+?:(.+)$")
+FURL_RE=re.compile(r"^pb://([^@]+)@([^/]*)/(.+)$")
+def tor_only_rewrite(furl):
+
+#    tubid, hints, swissnum = FURL_RE.search(furl)
+    (encrypted, tubID, hints, swissnum) = decode_furl_endpoints(furl)
+    new_hints = []
+    for hint in hints:
+        if not hint.startswith('tor:'):
+            mo = AFTER_ENDPOINT_TYPE_RE.match(hint)
+            h = mo.group(1)
+            new_hints.append("tor:" + mo.group(1))
+        else:
+            new_hints.append(hint)
+    new_furl = "pb://%s@%s/%s" % (tubID, ','.join(new_hints), swissnum)
+    return new_furl
+
 class NativeStorageServer:
     """I hold information about a storage server that we want to connect to.
     If we are connected, I hold the RemoteReference, their host address, and
@@ -191,6 +210,10 @@ class NativeStorageServer:
 
     def __init__(self, key_s, ann, min_shares=1):
         self.key_s = key_s
+
+        # XXX
+        ann["anonymous-storage-FURL"] = tor_only_rewrite(ann["anonymous-storage-FURL"])
+
         self.announcement = ann
         self.min_shares = min_shares
 

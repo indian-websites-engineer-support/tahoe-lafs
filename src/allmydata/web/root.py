@@ -302,19 +302,12 @@ class Root(rend.Page):
 
         ctx.fillSlots("peerid", server.get_longname())
         ctx.fillSlots("nickname", server.get_nickname())
+
         rhost = server.get_remote_host()
         if rhost:
-            if nodeid == self.client.nodeid:
-                rhost_s = "(loopback)"
-            elif isinstance(rhost, address.IPv4Address):
-                rhost_s = "%s:%d" % (rhost.host, rhost.port)
-            else:
-                rhost_s = str(rhost)
-            addr = rhost_s
             service_connection_status = "Connected"
             service_connection_status_abs_time, service_connection_status_rel_time = format_delta(server.get_last_connect_time())
         else:
-            addr = "N/A"
             service_connection_status = "Disconnected"
             service_connection_status_abs_time, service_connection_status_rel_time = format_delta(server.get_last_loss_time())
 
@@ -322,8 +315,8 @@ class Root(rend.Page):
 
         announcement = server.get_announcement()
         version = announcement["my-version"]
-        _, _, hints, _ = referenceable.decode_furl(server.get_storage_furl())
-        addr = "%s (%s)" % ( addr, ",".join( "%s:%s" % ( host, port ) for (ipv, host, port) in hints ) )
+        (encrypted, tubID, endpoints, swissnum) = referenceable.decode_furl_endpoints(server.get_storage_furl())
+        addr = ','.join(endpoints)
         available_space = server.get_available_space()
         if available_space is None:
             available_space = "N/A"
