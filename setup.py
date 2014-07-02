@@ -133,7 +133,9 @@ class SafeDevelop(Command):
         print "venv created"
         # or import support/peep.py, run peep.commands["install"](args)
         cmd = ["venv/bin/python", "support/peep.py",
-               "install", "-r", "requirements.txt"]
+               "install",
+               "--download-cache", "../tahoe-dep-cache",
+               "-r", "requirements.txt"]
         if not run_command(cmd):
             print "error while installing dependencies"
             sys.exit(1)
@@ -169,6 +171,19 @@ setup(name="tahoe",
                 'allmydata.web',
                 'allmydata.windows',
                 'buildtest'],
+      install_requires=[
+          "zfec==1.4.24",
+          "simplejson==3.5.3",
+          "Twisted==14.0.0",
+          "foolscap==0.6.4",
+          "pyOpenSSL==0.14",
+          "Nevow==0.11.1",
+          "mock==1.0.1",
+          "pycryptopp==0.6.0.1206569328141510525648634803928199668821045408958",
+          # twisted.conch needs these, but does not declare them
+          "pycrypto==2.6.1",
+          "pyasn1==0.1.7",
+          ],
       classifiers=trove_classifiers,
       test_suite="allmydata.test",
       package_data={"allmydata.web": ["*.xhtml",
