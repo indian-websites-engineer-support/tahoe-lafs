@@ -431,22 +431,6 @@ class FileUtil(ReallyEqualMixin, unittest.TestCase):
         fileutil.write_atomically(fn, "two", mode="") # non-binary
         self.failUnlessEqual(fileutil.read(fn), "two")
 
-    def test_open_or_create(self):
-        basedir = "util/FileUtil/test_open_or_create"
-        fileutil.make_dirs(basedir)
-        fn = os.path.join(basedir, "here")
-        f = fileutil.open_or_create(fn)
-        f.write("stuff.")
-        f.close()
-        f = fileutil.open_or_create(fn)
-        f.seek(0, os.SEEK_END)
-        f.write("more.")
-        f.close()
-        f = open(fn, "r")
-        data = f.read()
-        f.close()
-        self.failUnlessEqual(data, "stuff.more.")
-
     def test_NamedTemporaryDirectory(self):
         basedir = "util/FileUtil/test_NamedTemporaryDirectory"
         fileutil.make_dirs(basedir)
@@ -536,6 +520,20 @@ class FileUtil(ReallyEqualMixin, unittest.TestCase):
         self.failUnlessEqual(fileutil.read(long_filename), "test")
         _cleanup()
         self.failIf(os.path.exists(long_filename))
+
+    def test_windows_expanduser(self):
+        def call_windows_getenv(name):
+            if name == u"HOMEDRIVE": return u"C:"
+            if name == u"HOMEPATH": return u"\\Documents and Settings\\\u0100"
+            self.fail("unexpected argument to call_windows_getenv")
+        self.patch(fileutil, 'windows_getenv', call_windows_getenv)
+
+        self.failUnlessReallyEqual(fileutil.windows_expanduser(u"~"), u"C:\\Documents and Settings\\\u0100")
+        self.failUnlessReallyEqual(fileutil.windows_expanduser(u"~\\foo"), u"C:\\Documents and Settings\\\u0100\\foo")
+        self.failUnlessReallyEqual(fileutil.windows_expanduser(u"~/foo"), u"C:\\Documents and Settings\\\u0100\\foo")
+        self.failUnlessReallyEqual(fileutil.windows_expanduser(u"a"), u"a")
+        self.failUnlessReallyEqual(fileutil.windows_expanduser(u"a~"), u"a~")
+        self.failUnlessReallyEqual(fileutil.windows_expanduser(u"a\\~\\foo"), u"a\\~\\foo")
 
     def test_disk_stats(self):
         avail = fileutil.get_available_space('.', 2**14)
