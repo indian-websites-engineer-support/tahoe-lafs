@@ -40,6 +40,9 @@ the files.   See the 'configuration.rst' documentation file for details."""
 class _None: # used as a marker in get_config()
     pass
 
+class AnonymityDangerConfig(Exception):
+    """ node.anonymize was set however the current configuration is unsafe. """
+
 class MissingConfigEntry(Exception):
     """ A required config entry was not found. """
 
