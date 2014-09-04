@@ -67,7 +67,7 @@ class UnescapedHashError(Exception):
 class Node(service.MultiService):
     # this implements common functionality of both Client nodes and Introducer
     # nodes.
-    ANONYMITY_TYPES = ["onion"]
+    ANONYMITY_TYPES = ["onion", "i2p"]
     NODETYPE = "unknown NODETYPE"
     PORTNUMFILE = None
     CERTFILE = "node.pem"
