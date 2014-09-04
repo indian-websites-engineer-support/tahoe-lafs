@@ -67,6 +67,7 @@ class UnescapedHashError(Exception):
 class Node(service.MultiService):
     # this implements common functionality of both Client nodes and Introducer
     # nodes.
+    ANONYMITY_TYPES = ["onion"]
     NODETYPE = "unknown NODETYPE"
     PORTNUMFILE = None
     CERTFILE = "node.pem"
@@ -74,6 +75,7 @@ class Node(service.MultiService):
 
     def __init__(self, basedir=u"."):
         service.MultiService.__init__(self)
+        self.anonymize = False
         self.basedir = abspath_expanduser_unicode(unicode(basedir))
         self._portnumfile = os.path.join(self.basedir, self.PORTNUMFILE)
         self._tub_ready_observerlist = observer.OneShotObserverList()
@@ -161,6 +163,12 @@ class Node(service.MultiService):
             if os.path.exists(tahoe_cfg):
                 raise
 
+        cfg_anonymize = self.get_config("node", "tub.anonymize", False, boolean=True)
+        if cfg_anonymize:
+            # XXX
+            self.anonymize = True
+            self.check_anonymity_config()
+
         cfg_tubport = self.get_config("node", "tub.port", "")
         if not cfg_tubport:
             # For 'tub.port', tahoe.cfg overrides the individual file on
@@ -172,6 +180,20 @@ class Node(service.MultiService):
             except EnvironmentError:
                 if os.path.exists(self._portnumfile):
                     raise
+
+    def check_anonymity_config(self):
+        location = self.get_config("node", "tub.location", "")
+        if location == "":
+            raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous client endpoint string")
+
+        if location == "AUTODETECT":
+            raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous client endpoint string")
+
+        locations = location.split(',')
+        for location in locations:
+            fields = location.split(':')
+            if fields[0] not in self.ANONYMITY_TYPES:
+                raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous client endpoint string")
 
     def error_about_old_config_files(self):
         """ If any old configuration files are detected, raise OldConfigError. """
@@ -211,7 +233,6 @@ class Node(service.MultiService):
         self.nodeid = b32decode(self.tub.tubID.upper()) # binary format
         self.write_config("my_nodeid", b32encode(self.nodeid).lower() + "\n")
         self.short_nodeid = b32encode(self.nodeid).lower()[:8] # ready for printing
-
         tubport = self.get_config("node", "tub.port", "tcp:0")
         self.tub.listenOn(tubport)
         # we must wait until our service has started before we can find out
