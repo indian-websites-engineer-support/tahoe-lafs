@@ -413,8 +413,11 @@ class Node(service.MultiService):
         return log.msg(*args, **kwargs)
 
     def _setup_tub(self, ign):
+        location = self.get_config("node", "tub.location", None)
+        if location == "UNREACHABLE":
+            self.set_config("node", "tub.location", "")
+
         if self.anonymize:
-            location = self.get_config("node", "tub.location", None)
             if location is not None:
                 self.tub.setLocation(location)
             return self.tub
