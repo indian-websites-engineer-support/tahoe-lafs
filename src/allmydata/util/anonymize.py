@@ -5,5 +5,5 @@ def is_anonymous(location):
     for location in locations:
         fields = location.split(':')
         if fields[0] not in ANONYMITY_TYPES:
-            return True
-    return False
+            return False
+    return True
