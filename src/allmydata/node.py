@@ -413,6 +413,12 @@ class Node(service.MultiService):
         return log.msg(*args, **kwargs)
 
     def _setup_tub(self, ign):
+        if self.anonymize:
+            location = self.get_config("node", "tub.location", None)
+            if location is not None:
+                self.tub.setLocation(location)
+            return self.tub
+
         # we can't get a dynamically-assigned portnum until our Tub is
         # running, which means after startService.
         l = self.tub.getListeners()[0]

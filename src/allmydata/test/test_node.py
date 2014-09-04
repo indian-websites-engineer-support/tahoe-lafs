@@ -124,6 +124,25 @@ class TestCase(testutil.SignalMixin, unittest.TestCase):
         d.addCallback(_check_addresses)
         return d
 
+    def test_autodetect(self):
+        basedir = "test_node/test_anonymize_autodetect"
+        fileutil.make_dirs(basedir)
+        f = open(os.path.join(basedir, 'tahoe.cfg'), 'wt')
+        f.write("[node]\n")
+        f.write("tub.location = AUTODETECT\n")
+        f.close()
+
+        n = TestNode(basedir)
+        n.setServiceParent(self.parent)
+        d = n.when_tub_ready()
+
+        def _check_addresses(ignored_result):
+            furl = n.tub.registerReference(n)
+            self.failIf("AUTODETECT" in furl, furl)
+
+        d.addCallback(_check_addresses)
+        return d
+
 
     def test_anonymize_no_location(self):
         basedir = "test_node/test_anonymize_no_location"
