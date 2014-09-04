@@ -1,5 +1,5 @@
-
-import foolscap
+import re
+from foolscap.referenceable import decode_furl_endpoints
 
 AFTER_ENDPOINT_TYPE_RE=re.compile(r"^.+?:(.+)$")
 FURL_RE=re.compile(r"^pb://([^@]+)@([^/]*)/(.+)$")
@@ -23,5 +23,5 @@ def is_anonymous(location):
     for location in locations:
         fields = location.split(':')
         if fields[0] not in ANONYMITY_TYPES:
-            return True
-    return False
+            return False
+    return True

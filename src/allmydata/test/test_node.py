@@ -111,7 +111,7 @@ class TestCase(testutil.SignalMixin, unittest.TestCase):
         return d
 
     def test_autodetect(self):
-        basedir = "test_node/test_anonymize_autodetect"
+        basedir = "test_node/test_autodetect"
         fileutil.make_dirs(basedir)
         f = open(os.path.join(basedir, 'tahoe.cfg'), 'wt')
         f.write("[node]\n")
