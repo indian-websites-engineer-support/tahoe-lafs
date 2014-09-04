@@ -163,7 +163,7 @@ class Node(service.MultiService):
             if os.path.exists(tahoe_cfg):
                 raise
 
-        cfg_anonymize = self.get_config("node", "tub.anonymize", False, boolean=True)
+        cfg_anonymize = self.get_config("node", "anonymize", False, boolean=True)
         if cfg_anonymize:
             # XXX
             self.anonymize = True
@@ -183,17 +183,19 @@ class Node(service.MultiService):
 
     def check_anonymity_config(self):
         location = self.get_config("node", "tub.location", "")
+        is_err = False
         if location == "":
-            raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous server endpoint string")
-
+            is_err = True
         if location == "AUTODETECT":
-            raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous server endpoint string")
-
+            is_err = True
         locations = location.split(',')
         for location in locations:
             fields = location.split(':')
             if fields[0] not in self.ANONYMITY_TYPES:
-                raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous server endpoint string")
+                is_err = True
+                break
+        if is_err:
+            raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous server endpoint string")
 
     def error_about_old_config_files(self):
         """ If any old configuration files are detected, raise OldConfigError. """
