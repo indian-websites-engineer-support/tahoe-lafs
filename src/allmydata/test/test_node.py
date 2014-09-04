@@ -86,7 +86,7 @@ class TestCase(testutil.SignalMixin, unittest.TestCase):
 
         def _check_addresses(ignored_result):
             furl = n.tub.registerReference(n)
-            self.failUnless("UNREACHABLE" in furl, furl)
+            self.failUnless("@/" in furl, furl)
 
         d.addCallback(_check_addresses)
         return d

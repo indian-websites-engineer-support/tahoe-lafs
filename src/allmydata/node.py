@@ -353,10 +353,10 @@ class Node(service.MultiService):
 
         if not self.anonymize:
             location = self.get_config("node", "tub.location", None)
-            if location is not None:
-                if location == "AUTODETECT":
-                    self.set_config("node", "tub.location", "")
-                    d.addCallback(lambda res: iputil.get_local_addresses_async())
+            if location == "AUTODETECT" or location is None:
+                self.set_config("node", "tub.location", "")
+                d.addCallback(lambda res: iputil.get_local_addresses_async())
+
         d.addCallback(self._setup_tub)
 
         def _ready(res):
@@ -424,8 +424,11 @@ class Node(service.MultiService):
 
     def _setup_tub(self, local_addresses):
 
+        location = self.get_config("node", "tub.location", None)
+        if location == "UNREACHABLE":
+            self.set_config("node", "tub.location", "")
+
         if self.anonymize:
-            location = self.get_config("node", "tub.location", None)
             if location is not None:
                 self.tub.setLocation(location)
             return self.tub
