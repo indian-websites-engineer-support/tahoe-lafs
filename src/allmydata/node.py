@@ -350,8 +350,15 @@ class Node(service.MultiService):
 
         service.MultiService.startService(self)
         d = defer.succeed(None)
-        d.addCallback(lambda res: iputil.get_local_addresses_async())
+
+        if not self.anonymize:
+            location = self.get_config("node", "tub.location", None)
+            if location is not None:
+                if location == "AUTODETECT":
+                    self.set_config("node", "tub.location", "")
+                    d.addCallback(lambda res: iputil.get_local_addresses_async())
         d.addCallback(self._setup_tub)
+
         def _ready(res):
             self.log("%s running" % self.NODETYPE)
             self._tub_ready_observerlist.fire(self)
@@ -416,6 +423,13 @@ class Node(service.MultiService):
         return log.msg(*args, **kwargs)
 
     def _setup_tub(self, local_addresses):
+
+        if self.anonymize:
+            location = self.get_config("node", "tub.location", None)
+            if location is not None:
+                self.tub.setLocation(location)
+            return self.tub
+
         # we can't get a dynamically-assigned portnum until our Tub is
         # running, which means after startService.
         l = self.tub.getListeners()[0]
@@ -424,9 +438,14 @@ class Node(service.MultiService):
         # next time
         fileutil.write_atomically(self._portnumfile, "%d\n" % portnum, mode="")
 
-        base_location = ",".join([ "%s:%d" % (addr, portnum)
-                                   for addr in local_addresses ])
-        location = self.get_config("node", "tub.location", base_location)
+
+        if local_addresses is not None:
+            base_location = ",".join([ "%s:%d" % (addr, portnum)
+                                       for addr in local_addresses ])
+            location = self.get_config("node", "tub.location", base_location)
+        else:
+            location = self.get_config("node", "tub.location", "")
+
         self.log("Tub location set to %s" % location)
         self.tub.setLocation(location)
 
