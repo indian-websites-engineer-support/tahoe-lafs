@@ -104,7 +104,7 @@ def write_node_config(c, config):
     c.write("web.port = %s\n" % (webport.encode('utf-8'),))
     c.write("web.static = public_html\n")
     c.write("#tub.port =\n")
-    c.write("#tub.location = \n")
+    c.write("tub.location = AUTODETECT\n")
     incidents_dir = config.get("incidents_dir")
     if incidents_dir:
         c.write("incidents_dir = %s\n" % incidents_dir)
