@@ -12,6 +12,7 @@ from allmydata.util import fileutil, iputil, observer
 from allmydata.util.assertutil import precondition, _assert
 from allmydata.util.fileutil import abspath_expanduser_unicode
 from allmydata.util.encodingutil import get_filesystem_encoding, quote_output
+from allmydata.util.anonymize import is_anonymous
 
 # Add our application versions to the data that Foolscap's LogPublisher
 # reports.
@@ -188,12 +189,8 @@ class Node(service.MultiService):
             is_err = True
         if location == "AUTODETECT":
             is_err = True
-        locations = location.split(',')
-        for location in locations:
-            fields = location.split(':')
-            if fields[0] not in self.ANONYMITY_TYPES:
-                is_err = True
-                break
+        if not is_anonymous(location):
+            is_err = True
         if is_err:
             raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous server endpoint string")
 
