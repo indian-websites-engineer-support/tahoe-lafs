@@ -184,16 +184,16 @@ class Node(service.MultiService):
     def check_anonymity_config(self):
         location = self.get_config("node", "tub.location", "")
         if location == "":
-            raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous client endpoint string")
+            raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous server endpoint string")
 
         if location == "AUTODETECT":
-            raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous client endpoint string")
+            raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous server endpoint string")
 
         locations = location.split(',')
         for location in locations:
             fields = location.split(':')
             if fields[0] not in self.ANONYMITY_TYPES:
-                raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous client endpoint string")
+                raise AnonymityDangerConfig("tub.location must be set to either unreachable or a valid anonymous server endpoint string")
 
     def error_about_old_config_files(self):
         """ If any old configuration files are detected, raise OldConfigError. """
