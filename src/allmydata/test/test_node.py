@@ -116,7 +116,7 @@ class TestCase(testutil.SignalMixin, unittest.TestCase):
         fileutil.make_dirs(basedir)
         f = open(os.path.join(basedir, 'tahoe.cfg'), 'wt')
         f.write("[node]\n")
-        f.write("tub.anonymize = true\n")
+        f.write("tub.anonymize = True\n")
         f.close()
         self.failUnlessRaises(AnonymityDangerConfig, lambda: TestNode(basedir))
 
