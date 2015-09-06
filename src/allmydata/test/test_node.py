@@ -148,7 +148,7 @@ class TestCase(testutil.SignalMixin, unittest.TestCase):
         fileutil.make_dirs(basedir)
         f = open(os.path.join(basedir, 'tahoe.cfg'), 'wt')
         f.write("[node]\n")
-        f.write("tub.location = AUTODETECT\n")
+        f.write("tub.location = AUTO\n")
         f.close()
 
         n = TestNode(basedir)
@@ -157,7 +157,7 @@ class TestCase(testutil.SignalMixin, unittest.TestCase):
 
         def _check_addresses(ignored_result):
             furl = n.tub.registerReference(n)
-            self.failIf("AUTODETECT" in furl, furl)
+            self.failIf("AUTO" in furl, furl)
 
         d.addCallback(_check_addresses)
         return d
@@ -178,7 +178,7 @@ class TestCase(testutil.SignalMixin, unittest.TestCase):
         f = open(os.path.join(basedir, 'tahoe.cfg'), 'wt')
         f.write("[node]\n")
         f.write("anonymize = true\n")
-        f.write("tub.location = AUTODETECT\n")
+        f.write("tub.location = AUTO\n")
         f.close()
         self.failUnlessRaises(AnonymityDangerError, lambda: TestNode(basedir))
 

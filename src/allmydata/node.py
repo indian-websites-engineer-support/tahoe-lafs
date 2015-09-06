@@ -186,7 +186,7 @@ class Node(service.MultiService):
         is_err = False
         if location == "":
             is_err = True
-        if location == "AUTODETECT":
+        if "AUTO" in location:
             is_err = True
         if not is_anonymous(location):
             is_err = True
