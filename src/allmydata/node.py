@@ -68,7 +68,6 @@ class UnescapedHashError(Exception):
 class Node(service.MultiService):
     # this implements common functionality of both Client nodes and Introducer
     # nodes.
-    ANONYMITY_TYPES = ["onion", "i2p"]
     NODETYPE = "unknown NODETYPE"
     PORTNUMFILE = None
     CERTFILE = "node.pem"
@@ -183,13 +182,7 @@ class Node(service.MultiService):
 
     def check_anonymity_config(self):
         location = self.get_config("node", "tub.location", "")
-        is_err = False
-        if location == "":
-            is_err = True
-        if "AUTO" in location:
-            is_err = True
-        if not is_anonymous(location):
-            is_err = True
+        is_err = location == "" or not is_anonymous(location)
         if is_err:
             raise AnonymityDangerError("tub.location must be set to either unreachable or a valid anonymous server endpoint string")
 
