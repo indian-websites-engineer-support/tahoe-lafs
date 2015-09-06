@@ -42,7 +42,7 @@ class _None: # used as a marker in get_config()
     pass
 
 class AnonymityDangerError(Exception):
-    """ node.anonymize was set however the current configuration is unsafe. """
+    """ node.anonymous was set however the current configuration is unsafe. """
 
 class MissingConfigEntry(Exception):
     """ A required config entry was not found. """
@@ -75,7 +75,7 @@ class Node(service.MultiService):
 
     def __init__(self, basedir=u"."):
         service.MultiService.__init__(self)
-        self.anonymize = False
+        self.anonymous = False
         self.basedir = abspath_expanduser_unicode(unicode(basedir))
         self._portnumfile = os.path.join(self.basedir, self.PORTNUMFILE)
         self._tub_ready_observerlist = observer.OneShotObserverList()
@@ -163,9 +163,9 @@ class Node(service.MultiService):
             if os.path.exists(tahoe_cfg):
                 raise
 
-        cfg_anonymize = self.get_config("node", "anonymize", False, boolean=True)
-        if cfg_anonymize:
-            self.anonymize = True
+        cfg_anonymous = self.get_config("node", "anonymous", False, boolean=True)
+        if cfg_anonymous:
+            self.anonymous = True
             self.check_anonymity_config()
 
         cfg_tubport = self.get_config("node", "tub.port", "")
@@ -408,7 +408,7 @@ class Node(service.MultiService):
         if location == "UNREACHABLE":
             self.set_config("node", "tub.location", "")
 
-        if self.anonymize:
+        if self.anonymous:
             if location is not None:
                 self.tub.setLocation(location)
             return self.tub

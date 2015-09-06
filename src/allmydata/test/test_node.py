@@ -163,31 +163,31 @@ class TestCase(testutil.SignalMixin, unittest.TestCase):
         return d
 
 
-    def test_anonymize_no_location(self):
-        basedir = "test_node/test_anonymize_no_location"
+    def test_anonymous_no_location(self):
+        basedir = "test_node/test_anonymous_no_location"
         fileutil.make_dirs(basedir)
         f = open(os.path.join(basedir, 'tahoe.cfg'), 'wt')
         f.write("[node]\n")
-        f.write("anonymize = True\n")
+        f.write("anonymous = True\n")
         f.close()
         self.failUnlessRaises(AnonymityDangerError, lambda: TestNode(basedir))
 
-    def test_anonymize_autodetect(self):
-        basedir = "test_node/test_anonymize_autodetect"
+    def test_anonymous_autodetect(self):
+        basedir = "test_node/test_anonymous_autodetect"
         fileutil.make_dirs(basedir)
         f = open(os.path.join(basedir, 'tahoe.cfg'), 'wt')
         f.write("[node]\n")
-        f.write("anonymize = true\n")
+        f.write("anonymous = true\n")
         f.write("tub.location = AUTO\n")
         f.close()
         self.failUnlessRaises(AnonymityDangerError, lambda: TestNode(basedir))
 
-    def test_anonymize_tcp(self):
-        basedir = "test_node/test_anonymize_tcp"
+    def test_anonymous_tcp(self):
+        basedir = "test_node/test_anonymous_tcp"
         fileutil.make_dirs(basedir)
         f = open(os.path.join(basedir, 'tahoe.cfg'), 'wt')
         f.write("[node]\n")
-        f.write("anonymize = true\n")
+        f.write("anonymous = true\n")
         f.write("tub.location = tcp:myhostname:6669\n")
         f.close()
         self.failUnlessRaises(AnonymityDangerError, lambda: TestNode(basedir))
