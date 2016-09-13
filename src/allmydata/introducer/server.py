@@ -5,7 +5,7 @@ from twisted.application import service
 from foolscap.api import Referenceable
 import allmydata
 from allmydata import node
-from allmydata.util import log, rrefutil
+from allmydata.util import keyutil, log, rrefutil
 from allmydata.util.fileutil import abspath_expanduser_unicode
 from allmydata.introducer.interfaces import \
      RIIntroducerPublisherAndSubscriberService_v2
@@ -98,6 +98,34 @@ class WrapV1SubscriberInV2Interface: # for_v1
     def notifyOnDisconnect(self, *args, **kwargs):
         return self.original.notifyOnDisconnect(*args, **kwargs)
 
+class WrapI2PSubscriberInV2Interface:
+
+    def __init__(self, original):
+        self.original = original # also used for tests
+    def __eq__(self, them):
+        return self.original == them
+    def __ne__(self, them):
+        return self.original != them
+    def __hash__(self):
+        return hash(self.original)
+    def getRemoteTubID(self):
+        return self.original.getRemoteTubID()
+    def getSturdyRef(self):
+        return self.original.getSturdyRef()
+    def getPeer(self):
+        return self.original.getPeer()
+    def getLocationHints(self):
+        return self.original.getLocationHints()
+    def callRemote(self, methname, *args, **kwargs):
+        m = getattr(self, "wrap_" + methname)
+        return m(*args, **kwargs)
+    def wrap_announce_v2(self, announcements):
+        anns_v1 = [convert_announcement_v2_to_v1(ann, convert_i2p_new_to_old)
+                   for ann in announcements]
+        return self.original.callRemote("announce", set(anns_v1))
+    def notifyOnDisconnect(self, *args, **kwargs):
+        return self.original.notifyOnDisconnect(*args, **kwargs)
+
 class IntroducerService(service.MultiService, Referenceable):
     implements(RIIntroducerPublisherAndSubscriberService_v2)
     name = "introducer"
@@ -132,6 +160,9 @@ class IntroducerService(service.MultiService, Referenceable):
         # by v1 clients. We stash this so we can match it up with their
         # subscriptions.
         self._stub_client_announcements = {} # maps tubid to sinfo # for_v1
+
+        # I2P: fake keys for existing servers
+        self._mitm_keys = {}
 
         self._debug_counts = {"inbound_message": 0,
                               "inbound_duplicate": 0,
@@ -216,6 +247,16 @@ class IntroducerService(service.MultiService, Referenceable):
                  umid="wKHgCw")
         ann, key = unsign_from_foolscap(ann_t) # might raise BadSignatureError
         index = make_index(ann, key)
+
+        # I2P: Convert old-style V2 to new-style V2
+        if ann["app-versions"].has_key("allmydata-tahoe") and ann["app-versions"]["allmydata-tahoe"] == "1.10.0":
+            if not index in self._mitm_keys:
+                (sk_vk, _) = keyutil.make_keypair()
+                (self._mitm_keys[index], _) = keyutil.parse_privkey(sk_vk)
+            sk = self._mitm_keys[index]
+            ann_t = convert_i2p_old_to_new(ann, sk)
+            ann, key = unsign_from_foolscap(ann_t)
+            index = make_index(ann, key)
 
         service_name = str(ann["service-name"])
         if service_name == "stub_client": # for_v1
@@ -321,6 +362,9 @@ class IntroducerService(service.MultiService, Referenceable):
     def remote_subscribe_v2(self, subscriber, service_name, subscriber_info):
         self.log("introducer: subscription[%s] request at %s"
                  % (service_name, subscriber), umid="U3uzLg")
+        # I2P: Convert new-style V2 to old-style V2
+        if subscriber_info["app-versions"].has_key("allmydata-tahoe") and subscriber_info["app-versions"]["allmydata-tahoe"] == "1.10.0":
+            subscriber = WrapI2PSubscriberInV2Interface(subscriber)
         return self.add_subscriber(subscriber, service_name, subscriber_info)
 
     def add_subscriber(self, subscriber, service_name, subscriber_info):

@@ -46,10 +46,12 @@ def convert_announcement_v1_to_v2(ann_t):
     msg = simplejson.dumps(ann).encode("utf-8")
     return (msg, None, None)
 
-def convert_announcement_v2_to_v1(ann_v2):
+def convert_announcement_v2_to_v1(ann_v2, transformation=None):
     (msg, sig, pubkey) = ann_v2
     ann = simplejson.loads(msg)
     assert ann["version"] == 0
+    if transformation:
+        ann = transformation(ann)
     ann_t = (str(ann["anonymous-storage-FURL"]),
              str(ann["service-name"]),
              "remoteinterface-name is unused",
@@ -58,6 +60,21 @@ def convert_announcement_v2_to_v1(ann_v2):
              str(ann["oldest-supported"]),
              )
     return ann_t
+
+def convert_i2p_old_to_new(ann, sk):
+    (tubID, location_hints, name) = decode_furl(ann["anonymous-storage-FURL"])
+    location_hints = [('i2p:%s' % hint if hint.endswith('.i2p') else hint)
+                      for hint in location_hints]
+    ann["anonymous-storage-FURL"] = encode_furl(tubID, location_hints, name)
+    ann_t = sign_to_foolscap(ann, sk)
+    return ann_t
+
+def convert_i2p_new_to_old(ann):
+    (tubID, location_hints, name) = decode_furl(ann["anonymous-storage-FURL"])
+    location_hints = [(hint[4:] if hint.startswith('i2p:') else hint)
+                      for hint in location_hints]
+    ann["anonymous-storage-FURL"] = encode_furl(tubID, location_hints, name)
+    return ann
 
 
 def sign_to_foolscap(ann, sk):
