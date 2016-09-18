@@ -1,6 +1,7 @@
 
 import re, simplejson
 from allmydata.util import keyutil, base32, rrefutil
+from foolscap.furl import decode_furl, encode_furl
 
 def make_index(ann, key_s):
     """Return something that can be used as an index (e.g. a tuple of
@@ -69,12 +70,13 @@ def convert_i2p_old_to_new(ann, sk):
     ann_t = sign_to_foolscap(ann, sk)
     return ann_t
 
-def convert_i2p_new_to_old(ann):
+def convert_i2p_new_to_old(ann, sk):
     (tubID, location_hints, name) = decode_furl(ann["anonymous-storage-FURL"])
     location_hints = [(hint[4:] if hint.startswith('i2p:') else hint)
                       for hint in location_hints]
     ann["anonymous-storage-FURL"] = encode_furl(tubID, location_hints, name)
-    return ann
+    ann_t = sign_to_foolscap(ann, sk)
+    return ann_t
 
 
 def sign_to_foolscap(ann, sk):

@@ -11,7 +11,8 @@ from allmydata.introducer.interfaces import \
      RIIntroducerPublisherAndSubscriberService_v2
 from allmydata.introducer.common import convert_announcement_v1_to_v2, \
      convert_announcement_v2_to_v1, unsign_from_foolscap, make_index, \
-     get_tubid_string_from_ann, SubscriberDescriptor, AnnouncementDescriptor
+     get_tubid_string_from_ann, SubscriberDescriptor, AnnouncementDescriptor, \
+     convert_i2p_old_to_new, convert_i2p_new_to_old
 
 class FurlFileConflictError(Exception):
     pass
@@ -100,8 +101,9 @@ class WrapV1SubscriberInV2Interface: # for_v1
 
 class WrapI2PSubscriberInV2Interface:
 
-    def __init__(self, original):
+    def __init__(self, original, service):
         self.original = original # also used for tests
+        self.service = service
     def __eq__(self, them):
         return self.original == them
     def __ne__(self, them):
@@ -120,9 +122,16 @@ class WrapI2PSubscriberInV2Interface:
         m = getattr(self, "wrap_" + methname)
         return m(*args, **kwargs)
     def wrap_announce_v2(self, announcements):
-        anns_v1 = [convert_announcement_v2_to_v1(ann, convert_i2p_new_to_old)
-                   for ann in announcements]
-        return self.original.callRemote("announce", set(anns_v1))
+        anns_old = []
+        for ann_r in announcements:
+            ann, realkey = unsign_from_foolscap(ann_r)
+            if not realkey in self.service._mitm_keys_old:
+                (sk_vk, _) = keyutil.make_keypair()
+                (self.service._mitm_keys_old[realkey], _) = keyutil.parse_privkey(sk_vk)
+            sk = self.service._mitm_keys_old[realkey]
+            ann_t = convert_i2p_new_to_old(ann, sk)
+            anns_old.append(ann_t)
+        return self.original.callRemote("announce_v2", set(anns_old))
     def notifyOnDisconnect(self, *args, **kwargs):
         return self.original.notifyOnDisconnect(*args, **kwargs)
 
@@ -162,7 +171,8 @@ class IntroducerService(service.MultiService, Referenceable):
         self._stub_client_announcements = {} # maps tubid to sinfo # for_v1
 
         # I2P: fake keys for existing servers
-        self._mitm_keys = {}
+        self._mitm_keys_old = {}
+        self._mitm_keys_new = {}
 
         self._debug_counts = {"inbound_message": 0,
                               "inbound_duplicate": 0,
@@ -250,10 +260,10 @@ class IntroducerService(service.MultiService, Referenceable):
 
         # I2P: Convert old-style V2 to new-style V2
         if ann["app-versions"].has_key("allmydata-tahoe") and ann["app-versions"]["allmydata-tahoe"] == "1.10.0":
-            if not index in self._mitm_keys:
+            if not index in self._mitm_keys_new:
                 (sk_vk, _) = keyutil.make_keypair()
-                (self._mitm_keys[index], _) = keyutil.parse_privkey(sk_vk)
-            sk = self._mitm_keys[index]
+                (self._mitm_keys_new[index], _) = keyutil.parse_privkey(sk_vk)
+            sk = self._mitm_keys_new[index]
             ann_t = convert_i2p_old_to_new(ann, sk)
             ann, key = unsign_from_foolscap(ann_t)
             index = make_index(ann, key)
@@ -364,7 +374,7 @@ class IntroducerService(service.MultiService, Referenceable):
                  % (service_name, subscriber), umid="U3uzLg")
         # I2P: Convert new-style V2 to old-style V2
         if subscriber_info["app-versions"].has_key("allmydata-tahoe") and subscriber_info["app-versions"]["allmydata-tahoe"] == "1.10.0":
-            subscriber = WrapI2PSubscriberInV2Interface(subscriber)
+            subscriber = WrapI2PSubscriberInV2Interface(subscriber, self)
         return self.add_subscriber(subscriber, service_name, subscriber_info)
 
     def add_subscriber(self, subscriber, service_name, subscriber_info):
