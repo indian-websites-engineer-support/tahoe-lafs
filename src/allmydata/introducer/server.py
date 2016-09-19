@@ -259,7 +259,8 @@ class IntroducerService(service.MultiService, Referenceable):
         index = make_index(ann, key)
 
         # I2P: Convert old-style V2 to new-style V2
-        if ann["app-versions"].has_key("allmydata-tahoe") and ann["app-versions"]["allmydata-tahoe"] == "1.10.0":
+        if (ann["app-versions"].has_key("allmydata-tahoe") and ann["app-versions"]["allmydata-tahoe"] == "1.10.0") or \
+                ann["my-version"] == "allmydata-tahoe/1.9.2":
             if not index in self._mitm_keys_new:
                 (sk_vk, _) = keyutil.make_keypair()
                 (self._mitm_keys_new[index], _) = keyutil.parse_privkey(sk_vk)
